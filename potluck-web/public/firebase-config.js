@@ -37,3 +37,10 @@ window.FIREBASE_CONFIG = {
  * Everyone who opens the same event id shares the same live list.
  */
 window.POTLUCK_EVENT_ID = "family-holiday";
+
+/*
+ * The maximum number of people the gathering can hold. Shown in the
+ * headcount banner (e.g. "8 / 12"). Change this number to raise or lower
+ * the cap for your event.
+ */
+window.POTLUCK_MAX_HEADCOUNT = 12;

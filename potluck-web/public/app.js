@@ -52,6 +52,8 @@ function clampCount(n) {
   return Math.min(50, Math.max(1, n));
 }
 
+const MAX_HEADCOUNT = Number(window.POTLUCK_MAX_HEADCOUNT) > 0 ? Number(window.POTLUCK_MAX_HEADCOUNT) : 12;
+
 const ownerId = getOwnerId();
 const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 const esc = (s) => (s || "").replace(/[&<>"']/g, (c) =>
@@ -139,6 +141,20 @@ function renderHeadcount() {
   const total = attendees.reduce((sum, a) => sum + (Number(a.count) || 0), 0);
   const el = $("hc-total"); if (el) el.textContent = total;
   const sp = $("stat-people"); if (sp) sp.textContent = total;
+  const mx = $("hc-max"); if (mx) mx.textContent = "/ " + MAX_HEADCOUNT;
+  const left = MAX_HEADCOUNT - total;
+  const sub = $("hc-sub");
+  if (sub) {
+    if (total === 0) sub.textContent = `up to ${MAX_HEADCOUNT} people can come`;
+    else if (left > 0) sub.textContent = `${left} spot${left === 1 ? "" : "s"} left of ${MAX_HEADCOUNT} max`;
+    else if (left === 0) sub.textContent = `full — ${MAX_HEADCOUNT} is the max`;
+    else sub.textContent = `${-left} over the ${MAX_HEADCOUNT}-person max`;
+  }
+  const sec = $("headcount");
+  if (sec) {
+    sec.classList.toggle("full", total === MAX_HEADCOUNT);
+    sec.classList.toggle("over", total > MAX_HEADCOUNT);
+  }
 }
 
 function setConn(live) {
