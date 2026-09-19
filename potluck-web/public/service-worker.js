@@ -1,7 +1,7 @@
 /* Minimal offline shell for "Add to Home Screen".
    Caches ONLY the static app files. Firebase / Google traffic is never
    intercepted, so real-time sync always uses the live network. */
-const CACHE = "potluck-shell-v3";
+const CACHE = "potluck-shell-v4";
 const SHELL = [
   "./",
   "./index.html",
@@ -28,17 +28,19 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  // Only handle same-origin GETs for the static shell. Everything else
-  // (Firebase, gstatic SDK, Firestore streams) goes straight to network.
+  // Only handle same-origin GETs. Everything else (Firebase, gstatic SDK,
+  // Firestore streams) goes straight to network.
   if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
+  // NETWORK-FIRST: always try to fetch the latest deployed file when online,
+  // and refresh the cache with it. Fall back to the cached copy only when
+  // offline. This guarantees updates appear right after a deploy.
   e.respondWith(
-    caches.match(e.request).then((hit) =>
-      hit || fetch(e.request).then((res) => {
-        // Cache newly fetched shell files opportunistically.
+    fetch(e.request)
+      .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match("./index.html"))
-    )
+      })
+      .catch(() => caches.match(e.request).then((hit) => hit || caches.match("./index.html")))
   );
 });
