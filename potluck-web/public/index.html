@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#8a4b39" />
+  <meta name="theme-color" content="#b5836a" />
   <title>Holiday Potluck Tracker</title>
   <meta name="description" content="Sign up for the family potluck — see in real time who's bringing what, so no dish is doubled up." />
 
@@ -54,6 +54,18 @@
         </form>
       </section>
 
+      <div class="layout">
+      <!-- Thanksgiving essentials checklist (left column on wide screens) -->
+      <aside class="col-left">
+        <section id="essentials" class="card essentials" hidden>
+          <h2 class="card-title">🦃 Thanksgiving Essentials</h2>
+          <p class="essentials-sub"><strong id="ess-covered">0</strong> of <span id="ess-total">0</span> covered
+            <span class="muted">· tap one to claim it</span></p>
+          <ul id="essentials-list" class="essentials-list"></ul>
+        </section>
+      </aside>
+
+      <div class="col-right">
       <!-- Live summary -->
       <section id="summary" class="summary" hidden>
         <div class="summary-stat"><span id="stat-dishes" class="num">0</span><span class="lbl">dishes</span></div>
@@ -100,6 +112,8 @@
         </div>
         <div id="dish-list"></div>
       </section>
+      </div><!-- /.col-right -->
+      </div><!-- /.layout -->
     </main>
 
     <footer class="app-footer">

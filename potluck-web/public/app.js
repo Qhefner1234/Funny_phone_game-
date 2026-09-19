@@ -16,6 +16,22 @@ const CATEGORY_ICON = {
   "Supplies (plates, cups…)": "🧺", "Other": "🍽️",
 };
 
+// The classic Thanksgiving spread. An item is "covered" when someone's dish
+// name contains one of its keywords. Tapping an uncovered item pre-fills the
+// add form so a person can claim it in one tap.
+const ESSENTIALS = [
+  { label: "Turkey", keywords: ["turkey"], category: "Main Dish" },
+  { label: "Ham", keywords: ["ham"], category: "Main Dish" },
+  { label: "Stuffing / Dressing", keywords: ["stuffing", "dressing"], category: "Side", claim: "Stuffing" },
+  { label: "Mashed Potatoes", keywords: ["mashed"], category: "Side" },
+  { label: "Gravy", keywords: ["gravy"], category: "Side" },
+  { label: "Cranberry Sauce", keywords: ["cranberry"], category: "Side" },
+  { label: "Sweet Potatoes / Yams", keywords: ["sweet potato", "yam", "candied"], category: "Side", claim: "Sweet potatoes" },
+  { label: "Green Bean Casserole", keywords: ["green bean"], category: "Side" },
+  { label: "Dinner Rolls", keywords: ["roll", "biscuit", "bread"], category: "Bread & Rolls", claim: "Dinner rolls" },
+  { label: "Pumpkin Pie", keywords: ["pumpkin"], category: "Dessert" },
+];
+
 // ── Local identity (per device/browser) ─────────────────────────────
 const LS_NAME = "potluck.name";
 const LS_OWNER = "potluck.ownerId";
@@ -99,6 +115,7 @@ function showNameGateOrApp() {
   const name = getName();
   const hasName = !!name;
   $("name-gate").hidden = hasName;
+  $("essentials").hidden = !hasName;
   $("summary").hidden = !hasName;
   $("add-section").hidden = !hasName;
   $("list-section").hidden = !hasName;
@@ -150,6 +167,56 @@ function render() {
     }
     listEl.appendChild(group);
   }
+
+  renderEssentials();
+}
+
+// ── Thanksgiving essentials checklist ───────────────────────────────
+// Longer keywords match anywhere (handles plurals like "potatoes");
+// short ones (ham, yam) require a whole-word match so "graham" doesn't count.
+function essMatch(n, k) {
+  if (k.length >= 4) return n.includes(k);
+  return new RegExp("\\b" + k + "s?\\b").test(n);
+}
+function renderEssentials() {
+  const listEl = $("essentials-list");
+  if (!listEl) return;
+  listEl.innerHTML = "";
+  let covered = 0;
+  for (const ess of ESSENTIALS) {
+    const match = dishes.find((d) => {
+      const n = norm(d.dish);
+      return ess.keywords.some((k) => essMatch(n, k));
+    });
+    const done = !!match;
+    if (done) covered++;
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ess-item" + (done ? " done" : "");
+    btn.innerHTML = `
+      <span class="ess-check">${done ? "✓" : ""}</span>
+      <span class="ess-text">
+        <span class="ess-label">${esc(ess.label)}</span>
+        ${done
+          ? `<span class="ess-who">✓ ${esc(match.broughtBy) || "someone"}</span>`
+          : `<span class="ess-need">Still needed — tap to claim</span>`}
+      </span>`;
+    if (!done) btn.addEventListener("click", () => claimEssential(ess));
+    li.appendChild(btn);
+    listEl.appendChild(li);
+  }
+  $("ess-covered").textContent = covered;
+  $("ess-total").textContent = ESSENTIALS.length;
+}
+
+function claimEssential(ess) {
+  const dishInput = $("dish-input");
+  dishInput.value = ess.claim || ess.label;
+  $("category-input").value = ess.category;
+  $("add-section").scrollIntoView({ behavior: "smooth", block: "center" });
+  dishInput.focus();
+  checkDupe();
 }
 
 // ── Duplicate detection (live, as you type) ─────────────────────────
