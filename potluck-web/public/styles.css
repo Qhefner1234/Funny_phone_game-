@@ -88,6 +88,7 @@ body {
   border-radius: 12px; font-size: 1.1rem; cursor: pointer; flex: none;
 }
 .link-btn { background: none; border: 0; color: #fff; text-decoration: underline; cursor: pointer; font: inherit; padding: 0; }
+.you-sep { opacity: 0.6; }
 
 /* Layout */
 .content { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
@@ -150,11 +151,13 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: 1px
 .dish-by { color: var(--ink); font-weight: 600; }
 .badge-you { background: var(--green); color: #fff; font-size: 0.68rem; font-weight: 800;
   padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; letter-spacing: 0.03em; }
-.dish-edit {
-  background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 1.2rem;
-  padding: 4px; flex: none; border-radius: 8px;
+.dish-actions { display: flex; gap: 2px; flex: none; }
+.dish-edit, .dish-del {
+  background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 1.1rem;
+  padding: 4px 6px; flex: none; border-radius: 8px; line-height: 1;
 }
 .dish-edit:hover { background: var(--bg); color: var(--ink); }
+.dish-del:hover { background: var(--bg); color: var(--danger); }
 
 .empty { text-align: center; padding: 40px 16px; color: var(--muted); }
 .empty p { margin: 4px 0; }

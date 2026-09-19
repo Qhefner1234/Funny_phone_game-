@@ -6,29 +6,23 @@ import {
   setDoc, serverTimestamp, query, orderBy,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const CATEGORY_ORDER = [
-  "Appetizer", "Main Dish", "Side", "Salad", "Bread & Rolls",
-  "Dessert", "Drinks", "Supplies (plates, cups…)", "Other",
-];
+const CATEGORY_ORDER = ["Appetizers", "Main Course", "Dessert"];
 const CATEGORY_ICON = {
-  "Appetizer": "🥟", "Main Dish": "🍖", "Side": "🥔", "Salad": "🥗",
-  "Bread & Rolls": "🥐", "Dessert": "🥧", "Drinks": "🥤",
-  "Supplies (plates, cups…)": "🧺", "Other": "🍽️",
+  "Appetizers": "🥟", "Main Course": "🍖", "Dessert": "🥧",
 };
 
 // The classic Thanksgiving spread. An item is "covered" when someone's dish
 // name contains one of its keywords. Tapping an uncovered item pre-fills the
 // add form so a person can claim it in one tap.
 const ESSENTIALS = [
-  { label: "Turkey", keywords: ["turkey"], category: "Main Dish" },
-  { label: "Ham", keywords: ["ham"], category: "Main Dish" },
-  { label: "Stuffing / Dressing", keywords: ["stuffing", "dressing"], category: "Side", claim: "Stuffing" },
-  { label: "Mashed Potatoes", keywords: ["mashed"], category: "Side" },
-  { label: "Gravy", keywords: ["gravy"], category: "Side" },
-  { label: "Cranberry Sauce", keywords: ["cranberry"], category: "Side" },
-  { label: "Sweet Potatoes / Yams", keywords: ["sweet potato", "yam", "candied"], category: "Side", claim: "Sweet potatoes" },
-  { label: "Green Bean Casserole", keywords: ["green bean"], category: "Side" },
-  { label: "Dinner Rolls", keywords: ["roll", "biscuit", "bread"], category: "Bread & Rolls", claim: "Dinner rolls" },
+  { label: "Turkey", keywords: ["turkey"], category: "Main Course" },
+  { label: "Stuffing / Dressing", keywords: ["stuffing", "dressing"], category: "Main Course", claim: "Stuffing" },
+  { label: "Mashed Potatoes", keywords: ["mashed"], category: "Main Course" },
+  { label: "Gravy", keywords: ["gravy"], category: "Main Course" },
+  { label: "Cranberry Sauce", keywords: ["cranberry"], category: "Main Course" },
+  { label: "Sweet Potatoes / Yams", keywords: ["sweet potato", "yam", "candied"], category: "Main Course", claim: "Sweet potatoes" },
+  { label: "Green Bean Casserole", keywords: ["green bean"], category: "Main Course" },
+  { label: "Dinner Rolls", keywords: ["roll", "biscuit", "bread"], category: "Main Course", claim: "Dinner rolls" },
   { label: "Pumpkin Pie", keywords: ["pumpkin"], category: "Dessert" },
 ];
 
@@ -161,8 +155,14 @@ function render() {
           <div class="dish-meta">by <span class="dish-by">${esc(d.broughtBy) || "someone"}</span>${
             d.notes ? " · " + esc(d.notes) : ""}</div>
         </div>
-        ${mine ? '<button class="dish-edit" title="Edit or remove">✎</button>' : ""}`;
-      if (mine) card.querySelector(".dish-edit").addEventListener("click", () => openEdit(d));
+        ${mine ? `<div class="dish-actions">
+          <button class="dish-edit" title="Edit">✎</button>
+          <button class="dish-del" title="Remove">🗑</button>
+        </div>` : ""}`;
+      if (mine) {
+        card.querySelector(".dish-edit").addEventListener("click", () => openEdit(d));
+        card.querySelector(".dish-del").addEventListener("click", () => removeDish(d.id));
+      }
       group.appendChild(card);
     }
     listEl.appendChild(group);
@@ -279,14 +279,19 @@ async function saveEdit() {
   editingId = null;
 }
 
-async function deleteDish() {
-  if (!editingId || !dishColl) return;
+async function removeDish(id) {
+  if (!id || !dishColl) return;
   if (!confirm("Remove this dish from the list?")) return;
   try {
-    await deleteDoc(doc(dishColl, editingId));
+    await deleteDoc(doc(dishColl, id));
   } catch (err) { console.error(err); alert("Couldn't remove that dish."); }
-  editingId = null;
-  $("dish-dialog").close();
+}
+
+// Clear the person's name on this device (their dishes stay on the list).
+function signOut() {
+  if (!confirm("Sign out on this device? Your name will be cleared. Any dishes you added stay on the list — remove those first if you want them gone.")) return;
+  try { localStorage.removeItem(LS_NAME); } catch (_) {}
+  showNameGateOrApp();
 }
 
 async function saveEvent() {
@@ -320,7 +325,13 @@ $("edit-event-btn").addEventListener("click", () => {
 });
 $("event-save-btn").addEventListener("click", () => saveEvent());
 $("edit-save-btn").addEventListener("click", () => saveEdit());
-$("delete-dish-btn").addEventListener("click", () => deleteDish());
+$("delete-dish-btn").addEventListener("click", () => {
+  const id = editingId;
+  editingId = null;
+  $("dish-dialog").close();
+  removeDish(id);
+});
+$("signout-btn").addEventListener("click", signOut);
 
 // Register the service worker for "Add to Home Screen" / offline shell.
 if ("serviceWorker" in navigator) {
