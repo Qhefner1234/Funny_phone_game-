@@ -22,12 +22,13 @@
  */
 
 window.FIREBASE_CONFIG = {
-  apiKey: "PASTE_API_KEY_HERE",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID",
+  apiKey: "AIzaSyBTKS5j56Nqn94LPSu88plRMhAX4LVnz-U",
+  authDomain: "holiday-potluck-2026.firebaseapp.com",
+  projectId: "holiday-potluck-2026",
+  storageBucket: "holiday-potluck-2026.firebasestorage.app",
+  messagingSenderId: "783443756942",
+  appId: "1:783443756942:web:99eab22fbd0d62e50ac6df",
+  measurementId: "G-WW1BM6W91V",
 };
 
 /*
