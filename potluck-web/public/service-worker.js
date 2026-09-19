@@ -1,7 +1,7 @@
 /* Minimal offline shell for "Add to Home Screen".
    Caches ONLY the static app files. Firebase / Google traffic is never
    intercepted, so real-time sync always uses the live network. */
-const CACHE = "potluck-shell-v1";
+const CACHE = "potluck-shell-v2";
 const SHELL = [
   "./",
   "./index.html",
