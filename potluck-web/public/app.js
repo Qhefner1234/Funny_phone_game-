@@ -137,6 +137,52 @@ async function removeAttendee() {
   if (!attRef) return;
   try { await deleteDoc(attRef); } catch (err) { console.error(err); }
 }
+async function updateAttendeeCount(id, count) {
+  if (!attColl) return;
+  try {
+    await updateDoc(doc(attColl, id), { count: clampCount(count), updatedAt: serverTimestamp() });
+  } catch (err) { console.error(err); alert("Couldn't update that count."); }
+}
+function editAttendee(a) {
+  const raw = prompt(`How many people is ${a.name || "this person"} bringing? (including themselves)`,
+    String(Number(a.count) || 1));
+  if (raw === null) return;
+  const c = clampCount(raw);
+  if (a.id === ownerId) setParty(c);
+  updateAttendeeCount(a.id, c);
+}
+async function deleteAttendee(id) {
+  if (!attColl) return;
+  const self = id === ownerId;
+  if (!confirm(self ? "Remove yourself from the headcount? Your name will be cleared on this device."
+                    : "Remove this person from the headcount?")) return;
+  try { await deleteDoc(doc(attColl, id)); } catch (err) { console.error(err); alert("Couldn't remove that person."); }
+  if (self) {
+    try { localStorage.removeItem(LS_NAME); localStorage.removeItem(LS_PARTY); } catch (_) {}
+    showNameGateOrApp();
+  }
+}
+function renderAttendees() {
+  const listEl = $("attendees-list");
+  if (!listEl) return;
+  listEl.innerHTML = "";
+  const sorted = [...attendees].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  for (const a of sorted) {
+    const mine = a.id === ownerId;
+    const row = document.createElement("div");
+    row.className = "att-row";
+    row.innerHTML = `
+      <span class="att-name">${esc(a.name) || "Someone"}${mine ? '<span class="badge-you">YOU</span>' : ""}</span>
+      <span class="att-count" title="people">${Number(a.count) || 0}</span>
+      <div class="att-actions">
+        <button class="att-edit" title="Change count">✎</button>
+        <button class="att-del" title="Remove">🗑</button>
+      </div>`;
+    row.querySelector(".att-edit").addEventListener("click", () => editAttendee(a));
+    row.querySelector(".att-del").addEventListener("click", () => deleteAttendee(a.id));
+    listEl.appendChild(row);
+  }
+}
 function renderHeadcount() {
   const total = attendees.reduce((sum, a) => sum + (Number(a.count) || 0), 0);
   const el = $("hc-total"); if (el) el.textContent = total;
@@ -155,6 +201,7 @@ function renderHeadcount() {
     sec.classList.toggle("full", total === MAX_HEADCOUNT);
     sec.classList.toggle("over", total > MAX_HEADCOUNT);
   }
+  renderAttendees();
 }
 
 function setConn(live) {
@@ -170,6 +217,7 @@ function showNameGateOrApp() {
   $("name-gate").hidden = hasName;
   $("headcount").hidden = !hasName;
   $("essentials").hidden = !hasName;
+  $("attendees-card").hidden = !hasName;
   $("summary").hidden = !hasName;
   $("add-section").hidden = !hasName;
   $("list-section").hidden = !hasName;
