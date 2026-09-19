@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#C0392B" />
+  <title>Holiday Potluck Tracker</title>
+  <meta name="description" content="Sign up for the family potluck — see in real time who's bringing what, so no dish is doubled up." />
+
+  <!-- PWA / Add to Home Screen -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Potluck" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Connection / config banner -->
+    <div id="config-warning" class="banner banner-warn" hidden>
+      ⚠️ Firebase isn't set up yet. Open <code>firebase-config.js</code> and paste your project settings.
+      See the README for step-by-step instructions.
+    </div>
+
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand">
+          <img src="icons/icon-192.png" alt="" class="brand-icon" width="40" height="40" />
+          <div>
+            <h1 id="event-title">Holiday Potluck</h1>
+            <p id="event-subtitle" class="subtitle">Loading…</p>
+          </div>
+        </div>
+        <button id="edit-event-btn" class="icon-btn" title="Edit event details" hidden>✎</button>
+      </div>
+      <div id="you-row" class="you-row" hidden>
+        <span>Signed in as <strong id="your-name-label"></strong></span>
+        <button id="change-name-btn" class="link-btn">change</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- Name gate: shown until the person tells us who they are -->
+      <section id="name-gate" class="card name-gate" hidden>
+        <h2>Welcome! 👋</h2>
+        <p>Add your name so the family knows who's bringing what.</p>
+        <form id="name-form" class="stack">
+          <input id="name-input" type="text" placeholder="Your name (e.g. Aunt Carol)"
+                 autocomplete="name" maxlength="40" required />
+          <button type="submit" class="btn btn-primary">Let's go</button>
+        </form>
+      </section>
+
+      <!-- Live summary -->
+      <section id="summary" class="summary" hidden>
+        <div class="summary-stat"><span id="stat-dishes" class="num">0</span><span class="lbl">dishes</span></div>
+        <div class="summary-stat"><span id="stat-people" class="num">0</span><span class="lbl">people</span></div>
+        <div class="summary-stat"><span id="stat-yours" class="num">0</span><span class="lbl">yours</span></div>
+      </section>
+
+      <!-- Add dish -->
+      <section id="add-section" class="card" hidden>
+        <h2 class="card-title">Add what you're bringing</h2>
+        <form id="dish-form" class="stack">
+          <label class="field">
+            <span>Dish</span>
+            <input id="dish-input" type="text" placeholder="e.g. Pumpkin pie" maxlength="60" required />
+          </label>
+          <p id="dupe-warning" class="dupe-warning" hidden></p>
+          <label class="field">
+            <span>Category</span>
+            <select id="category-input">
+              <option>Appetizer</option>
+              <option>Main Dish</option>
+              <option>Side</option>
+              <option>Salad</option>
+              <option>Bread &amp; Rolls</option>
+              <option>Dessert</option>
+              <option>Drinks</option>
+              <option>Supplies (plates, cups…)</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Notes <span class="muted">(optional)</span></span>
+            <input id="notes-input" type="text" placeholder="e.g. serves 8, gluten-free" maxlength="80" />
+          </label>
+          <button type="submit" class="btn btn-primary">Add to the list</button>
+        </form>
+      </section>
+
+      <!-- The list, grouped by category -->
+      <section id="list-section" hidden>
+        <div id="empty-state" class="empty" hidden>
+          <p>🍽️ Nothing on the table yet.</p>
+          <p class="muted">Be the first to add a dish!</p>
+        </div>
+        <div id="dish-list"></div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span id="conn-status" class="conn"><span class="dot"></span> Live</span>
+      <span class="muted">Share the link — everyone sees updates instantly.</span>
+    </footer>
+  </div>
+
+  <!-- Edit-event dialog -->
+  <dialog id="event-dialog">
+    <form method="dialog" class="stack">
+      <h2>Event details</h2>
+      <label class="field"><span>Title</span>
+        <input id="event-title-input" type="text" maxlength="60" placeholder="Thanksgiving at the Hefners" />
+      </label>
+      <label class="field"><span>When / where</span>
+        <input id="event-when-input" type="text" maxlength="80" placeholder="Nov 27, 4pm · Grandma's house" />
+      </label>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn btn-ghost">Cancel</button>
+        <button id="event-save-btn" value="save" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Edit-dish dialog -->
+  <dialog id="dish-dialog">
+    <form method="dialog" class="stack">
+      <h2>Edit dish</h2>
+      <label class="field"><span>Dish</span>
+        <input id="edit-dish-input" type="text" maxlength="60" />
+      </label>
+      <label class="field"><span>Category</span>
+        <select id="edit-category-input">
+          <option>Appetizer</option>
+          <option>Main Dish</option>
+          <option>Side</option>
+          <option>Salad</option>
+          <option>Bread &amp; Rolls</option>
+          <option>Dessert</option>
+          <option>Drinks</option>
+          <option>Supplies (plates, cups…)</option>
+          <option>Other</option>
+        </select>
+      </label>
+      <label class="field"><span>Notes</span>
+        <input id="edit-notes-input" type="text" maxlength="80" />
+      </label>
+      <div class="dialog-actions">
+        <button type="button" id="delete-dish-btn" class="btn btn-danger">Delete</button>
+        <span class="spacer"></span>
+        <button value="cancel" class="btn btn-ghost">Cancel</button>
+        <button id="edit-save-btn" value="save" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="firebase-config.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

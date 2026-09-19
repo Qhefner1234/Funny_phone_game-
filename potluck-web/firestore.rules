@@ -1,0 +1,48 @@
+rules_version = '2';
+
+// Family potluck: no sign-in, so the link itself is the "key". These rules
+// keep access limited to the potluck data and validate the shape/size of
+// every write so a stray script can't dump junk into your database.
+//
+// Want it locked down harder? See the README section "Optional: lock it
+// down" for adding a shared passcode or Firebase App Check.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isShortString(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    match /events/{eventId} {
+      // Event title / when — anyone with the link may read and set it.
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['title', 'when'])
+                   && isShortString(request.resource.data.title, 60)
+                   && isShortString(request.resource.data.when, 80);
+
+      match /dishes/{dishId} {
+        allow read: if true;
+
+        allow create: if validDish(request.resource.data)
+                      && request.resource.data.createdAt == request.time;
+
+        // Edits keep the original owner/creator fields honest.
+        allow update: if validDish(request.resource.data)
+                      && request.resource.data.ownerId == resource.data.ownerId
+                      && request.resource.data.createdAt == resource.data.createdAt;
+
+        allow delete: if true;
+      }
+    }
+
+    function validDish(d) {
+      return d.keys().hasOnly(['dish', 'category', 'notes', 'broughtBy', 'ownerId', 'createdAt'])
+        && d.dish is string && d.dish.size() > 0 && d.dish.size() <= 60
+        && d.category is string && d.category.size() <= 40
+        && d.notes is string && d.notes.size() <= 80
+        && d.broughtBy is string && d.broughtBy.size() <= 40
+        && d.ownerId is string && d.ownerId.size() <= 64
+        && d.createdAt is timestamp;
+    }
+  }
+}
