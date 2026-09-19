@@ -84,14 +84,14 @@
             <input id="dish-input" type="text" placeholder="e.g. Pumpkin pie" maxlength="60" required />
           </label>
           <p id="dupe-warning" class="dupe-warning" hidden></p>
-          <label class="field">
-            <span>Category</span>
-            <select id="category-input">
-              <option>Appetizers</option>
-              <option>Main Course</option>
-              <option>Dessert</option>
-            </select>
-          </label>
+          <div class="field">
+            <span>Course</span>
+            <div class="segmented" id="category-seg" role="radiogroup" aria-label="Course">
+              <button type="button" class="seg" data-value="Appetizers"><span class="ico">🥟</span>Appetizers</button>
+              <button type="button" class="seg" data-value="Main Course"><span class="ico">🍖</span>Main Course</button>
+              <button type="button" class="seg" data-value="Dessert"><span class="ico">🥧</span>Dessert</button>
+            </div>
+          </div>
           <label class="field">
             <span>Notes <span class="muted">(optional)</span></span>
             <input id="notes-input" type="text" placeholder="e.g. serves 8, gluten-free" maxlength="80" />
@@ -142,13 +142,13 @@
       <label class="field"><span>Dish</span>
         <input id="edit-dish-input" type="text" maxlength="60" />
       </label>
-      <label class="field"><span>Category</span>
-        <select id="edit-category-input">
-          <option>Appetizers</option>
-          <option>Main Course</option>
-          <option>Dessert</option>
-        </select>
-      </label>
+      <div class="field"><span>Course</span>
+        <div class="segmented" id="edit-category-seg" role="radiogroup" aria-label="Course">
+          <button type="button" class="seg" data-value="Appetizers"><span class="ico">🥟</span>Appetizers</button>
+          <button type="button" class="seg" data-value="Main Course"><span class="ico">🍖</span>Main Course</button>
+          <button type="button" class="seg" data-value="Dessert"><span class="ico">🥧</span>Dessert</button>
+        </div>
+      </div>
       <label class="field"><span>Notes</span>
         <input id="edit-notes-input" type="text" maxlength="80" />
       </label>

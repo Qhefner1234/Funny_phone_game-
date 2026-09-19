@@ -155,14 +155,12 @@ function render() {
           <div class="dish-meta">by <span class="dish-by">${esc(d.broughtBy) || "someone"}</span>${
             d.notes ? " · " + esc(d.notes) : ""}</div>
         </div>
-        ${mine ? `<div class="dish-actions">
-          <button class="dish-edit" title="Edit">✎</button>
+        <div class="dish-actions">
+          ${mine ? '<button class="dish-edit" title="Edit">✎</button>' : ""}
           <button class="dish-del" title="Remove">🗑</button>
-        </div>` : ""}`;
-      if (mine) {
-        card.querySelector(".dish-edit").addEventListener("click", () => openEdit(d));
-        card.querySelector(".dish-del").addEventListener("click", () => removeDish(d.id));
-      }
+        </div>`;
+      if (mine) card.querySelector(".dish-edit").addEventListener("click", () => openEdit(d));
+      card.querySelector(".dish-del").addEventListener("click", () => removeDish(d.id));
       group.appendChild(card);
     }
     listEl.appendChild(group);
@@ -213,7 +211,7 @@ function renderEssentials() {
 function claimEssential(ess) {
   const dishInput = $("dish-input");
   dishInput.value = ess.claim || ess.label;
-  $("category-input").value = ess.category;
+  segSet($("category-seg"), ess.category);
   $("add-section").scrollIntoView({ behavior: "smooth", block: "center" });
   dishInput.focus();
   checkDupe();
@@ -242,7 +240,7 @@ async function addDish(e) {
   if (!dish) return;
   const payload = {
     dish,
-    category: $("category-input").value,
+    category: segGet($("category-seg")),
     notes: $("notes-input").value.trim(),
     broughtBy: getName(),
     ownerId,
@@ -262,7 +260,7 @@ async function addDish(e) {
 function openEdit(d) {
   editingId = d.id;
   $("edit-dish-input").value = d.dish;
-  $("edit-category-input").value = d.category;
+  segSet($("edit-category-seg"), d.category);
   $("edit-notes-input").value = d.notes || "";
   $("dish-dialog").showModal();
 }
@@ -272,7 +270,7 @@ async function saveEdit() {
   try {
     await updateDoc(doc(dishColl, editingId), {
       dish: $("edit-dish-input").value.trim(),
-      category: $("edit-category-input").value,
+      category: segGet($("edit-category-seg")),
       notes: $("edit-notes-input").value.trim(),
     });
   } catch (err) { console.error(err); alert("Couldn't save changes."); }
@@ -303,6 +301,25 @@ async function saveEvent() {
     }, { merge: true });
   } catch (err) { console.error(err); alert("Couldn't save event details."); }
 }
+
+// ── Segmented (three-box) course selector ───────────────────────────
+function segSet(container, val) {
+  if (!container) return;
+  const btns = [...container.querySelectorAll(".seg")];
+  const known = btns.map((b) => b.dataset.value);
+  const value = known.includes(val) ? val : (known[0] || "");
+  container.dataset.value = value;
+  btns.forEach((b) => b.classList.toggle("active", b.dataset.value === value));
+}
+function segGet(container) { return container ? (container.dataset.value || "") : ""; }
+function initSeg(container) {
+  if (!container) return;
+  const btns = [...container.querySelectorAll(".seg")];
+  btns.forEach((b) => b.addEventListener("click", () => segSet(container, b.dataset.value)));
+  if (!container.dataset.value && btns[0]) segSet(container, btns[0].dataset.value);
+}
+initSeg($("category-seg"));
+initSeg($("edit-category-seg"));
 
 // ── Wire up UI ──────────────────────────────────────────────────────
 $("name-form").addEventListener("submit", (e) => {
