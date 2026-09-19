@@ -141,6 +141,25 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: 1px
   border: 1px solid var(--amber); border-radius: 10px; font-size: 0.88rem; color: var(--ink);
 }
 
+/* Headcount hero banner */
+.headcount {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  background: linear-gradient(135deg, #c2937a, #b5836a); color: #fff;
+  border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow);
+}
+.hc-main { display: flex; align-items: center; gap: 14px; }
+.hc-num {
+  font-size: 2.5rem; font-weight: 800; line-height: 1; min-width: 1.4em; text-align: center;
+  text-shadow: 0 1px 2px rgba(90, 60, 40, 0.3);
+}
+.hc-label { font-size: 1rem; font-weight: 700; line-height: 1.25; }
+.hc-sub { font-weight: 400; font-size: 0.82rem; color: rgba(255, 255, 255, 0.9); }
+.hc-edit {
+  background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff; white-space: nowrap; font-size: 0.88rem; padding: 10px 14px;
+}
+.hc-edit:hover { background: rgba(255, 255, 255, 0.3); }
+
 /* Summary */
 .summary { display: flex; gap: 12px; }
 .summary-stat {

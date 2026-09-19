@@ -40,6 +40,18 @@ function getOwnerId() {
 function getName() { try { return localStorage.getItem(LS_NAME) || ""; } catch (_) { return ""; } }
 function setName(n) { try { localStorage.setItem(LS_NAME, n); } catch (_) {} }
 
+const LS_PARTY = "potluck.party";
+function getParty() {
+  const v = parseInt((() => { try { return localStorage.getItem(LS_PARTY); } catch (_) { return ""; } })() || "", 10);
+  return Number.isFinite(v) && v > 0 ? v : 0;
+}
+function setParty(n) { try { localStorage.setItem(LS_PARTY, String(n)); } catch (_) {} }
+function clampCount(n) {
+  n = parseInt(n, 10);
+  if (!Number.isFinite(n)) n = 1;
+  return Math.min(50, Math.max(1, n));
+}
+
 const ownerId = getOwnerId();
 const norm = (s) => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
 const esc = (s) => (s || "").replace(/[&<>"']/g, (c) =>
@@ -48,7 +60,10 @@ const esc = (s) => (s || "").replace(/[&<>"']/g, (c) =>
 // ── DOM refs ────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 let dishes = [];        // live list from Firestore
+let attendees = [];     // live attendee list (name + party count)
 let dishColl = null;    // Firestore collection ref
+let attColl = null;     // Firestore attendees collection ref
+let attRef = null;      // this device's attendee doc
 let eventRef = null;    // Firestore event doc ref
 let editingId = null;
 
@@ -72,6 +87,8 @@ function boot() {
   const eventId = window.POTLUCK_EVENT_ID || "family-holiday";
   eventRef = doc(db, "events", eventId);
   dishColl = collection(db, "events", eventId, "dishes");
+  attColl = collection(db, "events", eventId, "attendees");
+  attRef = doc(attColl, ownerId);
 
   // Live event details (title / when)
   onSnapshot(eventRef, (snap) => {
@@ -92,10 +109,36 @@ function boot() {
     setConn(false);
   });
 
+  // Live attendee headcount
+  onSnapshot(attColl, (snap) => {
+    attendees = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderHeadcount();
+  }, (err) => console.error(err));
+
   window.addEventListener("online", () => setConn(true));
   window.addEventListener("offline", () => setConn(false));
 
+  // Make sure a returning person is counted (legacy users default to 1).
+  if (getName()) saveAttendee(getName(), getParty() || 1);
+
   showNameGateOrApp();
+}
+
+// ── Attendees / headcount ───────────────────────────────────────────
+async function saveAttendee(name, count) {
+  if (!attRef) return;
+  try {
+    await setDoc(attRef, { name: name || "", count: clampCount(count), updatedAt: serverTimestamp() });
+  } catch (err) { console.error(err); }
+}
+async function removeAttendee() {
+  if (!attRef) return;
+  try { await deleteDoc(attRef); } catch (err) { console.error(err); }
+}
+function renderHeadcount() {
+  const total = attendees.reduce((sum, a) => sum + (Number(a.count) || 0), 0);
+  const el = $("hc-total"); if (el) el.textContent = total;
+  const sp = $("stat-people"); if (sp) sp.textContent = total;
 }
 
 function setConn(live) {
@@ -109,6 +152,7 @@ function showNameGateOrApp() {
   const name = getName();
   const hasName = !!name;
   $("name-gate").hidden = hasName;
+  $("headcount").hidden = !hasName;
   $("essentials").hidden = !hasName;
   $("summary").hidden = !hasName;
   $("add-section").hidden = !hasName;
@@ -123,11 +167,10 @@ function showNameGateOrApp() {
 // ── Rendering ───────────────────────────────────────────────────────
 function render() {
   const name = getName();
-  // Summary
+  // Summary ("attending" is driven by renderHeadcount from the attendee list)
   $("stat-dishes").textContent = dishes.length;
-  const people = new Set(dishes.map((d) => norm(d.broughtBy)).filter(Boolean));
-  $("stat-people").textContent = people.size;
   $("stat-yours").textContent = dishes.filter((d) => d.ownerId === ownerId).length;
+  renderHeadcount();
 
   const listEl = $("dish-list");
   listEl.innerHTML = "";
@@ -287,8 +330,9 @@ async function removeDish(id) {
 
 // Clear the person's name on this device (their dishes stay on the list).
 function signOut() {
-  if (!confirm("Sign out on this device? Your name will be cleared. Any dishes you added stay on the list — remove those first if you want them gone.")) return;
-  try { localStorage.removeItem(LS_NAME); } catch (_) {}
+  if (!confirm("Sign out on this device? Your name and headcount will be cleared. Any dishes you added stay on the list — remove those first if you want them gone.")) return;
+  removeAttendee();
+  try { localStorage.removeItem(LS_NAME); localStorage.removeItem(LS_PARTY); } catch (_) {}
   showNameGateOrApp();
 }
 
@@ -326,12 +370,27 @@ $("name-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const n = $("name-input").value.trim();
   if (!n) return;
+  const c = clampCount($("party-input").value);
   setName(n);
+  setParty(c);
   showNameGateOrApp();
+  saveAttendee(n, c);
 });
 $("change-name-btn").addEventListener("click", () => {
   const n = prompt("Your name:", getName());
-  if (n && n.trim()) { setName(n.trim()); $("your-name-label").textContent = n.trim(); render(); }
+  if (n && n.trim()) {
+    setName(n.trim());
+    $("your-name-label").textContent = n.trim();
+    saveAttendee(n.trim(), getParty() || 1);
+    render();
+  }
+});
+$("hc-edit").addEventListener("click", () => {
+  const raw = prompt("How many people are you bringing? (including yourself)", String(getParty() || 1));
+  if (raw === null) return;
+  const c = clampCount(raw);
+  setParty(c);
+  saveAttendee(getName(), c);
 });
 $("dish-form").addEventListener("submit", addDish);
 $("dish-input").addEventListener("input", checkDupe);

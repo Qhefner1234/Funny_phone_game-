@@ -20,6 +20,19 @@ service cloud.firestore {
                    && isShortString(request.resource.data.title, 60)
                    && isShortString(request.resource.data.when, 80);
 
+      // Attendees: one doc per device, holding a name and party size.
+      match /attendees/{who} {
+        allow read: if true;
+        allow write: if request.resource.data.keys().hasOnly(['name', 'count', 'updatedAt'])
+                     && request.resource.data.name is string
+                     && request.resource.data.name.size() <= 40
+                     && request.resource.data.count is number
+                     && request.resource.data.count >= 1
+                     && request.resource.data.count <= 50
+                     && request.resource.data.updatedAt is timestamp;
+        allow delete: if true;
+      }
+
       match /dishes/{dishId} {
         allow read: if true;
 

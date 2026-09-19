@@ -50,10 +50,28 @@
         <h2>Welcome! 👋</h2>
         <p>Add your name so the family knows who's bringing what.</p>
         <form id="name-form" class="stack">
-          <input id="name-input" type="text" placeholder="Your name (e.g. Aunt Carol)"
-                 autocomplete="name" maxlength="40" required />
+          <label class="field">
+            <span>Your name</span>
+            <input id="name-input" type="text" placeholder="e.g. Aunt Carol"
+                   autocomplete="name" maxlength="40" required />
+          </label>
+          <label class="field">
+            <span>How many people are you bringing? <span class="muted">(including yourself)</span></span>
+            <input id="party-input" type="number" min="1" max="50" step="1" value="1"
+                   inputmode="numeric" required />
+          </label>
           <button type="submit" class="btn btn-primary">Let's go</button>
         </form>
+      </section>
+
+      <!-- Live headcount so everyone knows how much food to bring -->
+      <section id="headcount" class="headcount" hidden>
+        <div class="hc-main">
+          <span class="hc-num" id="hc-total">0</span>
+          <span class="hc-label">people coming 🍽️<br>
+            <span class="hc-sub">plan your portions for this many</span></span>
+        </div>
+        <button id="hc-edit" class="btn hc-edit">Update my count</button>
       </section>
 
       <div class="layout">
@@ -71,7 +89,7 @@
       <!-- Live summary -->
       <section id="summary" class="summary" hidden>
         <div class="summary-stat"><span id="stat-dishes" class="num">0</span><span class="lbl">dishes</span></div>
-        <div class="summary-stat"><span id="stat-people" class="num">0</span><span class="lbl">people</span></div>
+        <div class="summary-stat"><span id="stat-people" class="num">0</span><span class="lbl">attending</span></div>
         <div class="summary-stat"><span id="stat-yours" class="num">0</span><span class="lbl">yours</span></div>
       </section>
 
